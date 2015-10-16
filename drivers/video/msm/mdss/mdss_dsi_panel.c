@@ -33,7 +33,7 @@
 #define NT35596_BUF_5_STATUS 0x80
 #define NT35596_MAX_ERR_CNT 2
 
-#define MIN_REFRESH_RATE 30
+#define MIN_REFRESH_RATE 48
 
 #ifdef CONFIG_MACH_T86519A1
 #define TPS65132_GPIO_POS_EN 902
@@ -1798,6 +1798,9 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	rc = of_property_read_u32(np, "qcom,mdss-dsi-init-delay-us", &tmp);
 	pinfo->mipi.init_delay = (!rc ? tmp : 0);
 
+	rc = of_property_read_u32(np, "qcom,mdss-dsi-post-init-delay", &tmp);
+	pinfo->mipi.post_init_delay = (!rc ? tmp : 0);
+
 	mdss_dsi_parse_roi_alignment(np, pinfo);
 
 	mdss_dsi_parse_trigger(np, &(pinfo->mipi.mdp_trigger),
@@ -1894,6 +1897,12 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	}
 	pinfo->mipi.force_clk_lane_hs = of_property_read_bool(np,
 		"qcom,mdss-dsi-force-clock-lane-hs");
+
+	pinfo->mipi.force_clk_lane_hs = of_property_read_bool(np,
+		"qcom,mdss-dsi-force-clock-lane-hs");
+
+	pinfo->mipi.always_on = of_property_read_bool(np,
+		"qcom,mdss-dsi-always-on");
 
 	rc = mdss_dsi_parse_panel_features(np, ctrl_pdata);
 	if (rc) {

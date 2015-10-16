@@ -891,6 +891,14 @@ static void process_init_reply(struct fuse_conn *fc, struct fuse_req *req)
 				fc->async_dio = 1;
 			if (arg->flags & FUSE_WRITEBACK_CACHE)
 				fc->writeback_cache = 1;
+<<<<<<< HEAD
+=======
+			if (arg->time_gran && arg->time_gran <= 1000000000)
+				fc->sb->s_time_gran = arg->time_gran;
+			else
+				fc->sb->s_time_gran = 1000000000;
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		} else {
 			ra_pages = fc->max_read / PAGE_CACHE_SIZE;
 			fc->no_lock = 1;

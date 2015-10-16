@@ -310,6 +310,7 @@ struct sdhci_msm_pltfm_data {
 	bool nonremovable;
 	bool use_mod_dynamic_qos;
 	bool nonhotplug;
+	bool no_1p8v;
 	bool pin_cfg_sts;
 	struct sdhci_msm_pin_data *pin_data;
 	struct sdhci_pinctrl_data *pctrl_data;
@@ -1487,9 +1488,15 @@ out:
 
 #ifdef CONFIG_SMP
 static void sdhci_msm_populate_affinity(struct sdhci_msm_pltfm_data *pdata,
+<<<<<<< HEAD
 				     struct device_node *np,
 					 char *qos_affinity_name,
 					 char *qos_affinity_mask)
+=======
+					struct device_node *np,
+					char *qos_affinity_name,
+					char *qos_affinity_mask)
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 {
 	const char *cpu_affinity = NULL;
 	u32 cpu_mask;
@@ -1508,10 +1515,41 @@ static void sdhci_msm_populate_affinity(struct sdhci_msm_pltfm_data *pdata,
 		}
 	}
 }
+
+static inline void sdhci_set_pm_qos_irq_type(struct sdhci_host *host,
+						int i)
+{
+	struct sdhci_host_qos *host_qos = host->host_qos;
+	/*
+	 * The default request type PM_QOS_REQ_ALL_CORES is
+	 * applicable to all CPU cores that are online and
+	 * this would have a power impact when there are more
+	 * number of CPUs. This new PM_QOS_REQ_AFFINE_IRQ request
+	 * type shall update/apply the vote only to that CPU to
+	 * which this IRQ's affinity is set to.
+	 * PM_QOS_REQ_AFFINE_CORES request type is used for targets that have
+	 * little cluster and will update/apply the vote to all the cores in
+	 * the little cluster.
+	 */
+
+	if (host_qos[i].pm_qos_req_dma.type == PM_QOS_REQ_AFFINE_IRQ)
+		host_qos[i].pm_qos_req_dma.irq = host->irq;
+}
+
 #else
 static void sdhci_msm_populate_affinity(struct sdhci_msm_pltfm_data *pdata,
+<<<<<<< HEAD
 				struct device_node *np, char *qos_affinity_name
 				char *qos_affinity_mask)
+=======
+				struct device_node *np, char *qos_affinity_name,
+				char *qos_affinity_mask)
+{
+}
+
+static inline void sdhci_set_pm_qos_irq_type(struct sdhci_host *host,
+						int i)
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 {
 }
 #endif
@@ -1520,14 +1558,31 @@ static void sdhci_msm_update_host_qos_data(struct sdhci_msm_pltfm_data *pdata,
 {
 	struct sdhci_host_qos *host_qos = host->host_qos;
 
+<<<<<<< HEAD
+=======
+static void sdhci_msm_update_host_qos_data(struct sdhci_msm_pltfm_data *pdata,
+		struct sdhci_host *host, int i)
+{
+	struct sdhci_host_qos *host_qos = host->host_qos;
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	host_qos[i].cpu_dma_latency_us = pdata->cpu_dma_latency_us;
 	host_qos[i].cpu_dma_latency_tbl_sz = pdata->cpu_dma_latency_tbl_sz;
 	host_qos[i].pm_qos_req_dma.type = pdata->cpu_affinity_type;
 	if (host_qos[i].pm_qos_req_dma.type == PM_QOS_REQ_AFFINE_CORES)
+<<<<<<< HEAD
 		bitmap_copy(cpumask_bits(&host_qos[i].pm_qos_req_dma.cpus_affine),
 			    cpumask_bits(&pdata->cpu_affinity_mask),
 			    nr_cpumask_bits);
 }
+=======
+		cpumask_copy(&host_qos[i].pm_qos_req_dma.cpus_affine,
+			    &pdata->cpu_affinity_mask);
+
+	sdhci_set_pm_qos_irq_type(host, i);
+}
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 static void sdhci_msm_print_qos_data(struct device *dev,
 		struct sdhci_host *host)
 {
@@ -1538,13 +1593,21 @@ static void sdhci_msm_print_qos_data(struct device *dev,
 			host->host_use_default_qos);
 
 	for (i = 0; i < SDHCI_QOS_MAX_POLICY; i++) {
+<<<<<<< HEAD
 		dev_info(dev, "For Qos_policy(%s qos) = %d, tbl_sz = %d, qos type = %d\n",
+=======
+		dev_info(dev, "For qos_policy(%s qos) = %d, tbl_sz = %d, qos type = %d\n",
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 				i ? "modified dynamic" : "default", i,
 				host_qos[i].cpu_dma_latency_tbl_sz,
 				host_qos[i].pm_qos_req_dma.type);
 
 		for (j = 0; j < host_qos[i].cpu_dma_latency_tbl_sz; j++)
+<<<<<<< HEAD
 			dev_info(dev, "\tdma_lat = %d\n",
+=======
+			dev_info(dev, "\tdma_latency = %d\n",
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 				host_qos[i].cpu_dma_latency_us[j]);
 	}
 }
@@ -1560,6 +1623,7 @@ static int sdhci_msm_populate_qos(struct device *dev,
 	char *qos_planes_name[SDHCI_QOS_MAX_POLICY] = {
 			"qcom,cpu-dma-latency-us",
 			"qcom,cpu-dma-latency-us-r",
+<<<<<<< HEAD
 			"qcom,cpu-dma-latency-us-w"};
 	char *qos_affinity_name[SDHCI_QOS_MAX_POLICY] = {
 			"qcom,cpu-affinity",
@@ -1575,6 +1639,28 @@ static int sdhci_msm_populate_qos(struct device *dev,
 
 	if (qos_planes > SDHCI_QOS_MAX_POLICY)
 		goto out;
+=======
+			"qcom,cpu-dma-latency-us-w"
+			};
+	char *qos_affinity_name[SDHCI_QOS_MAX_POLICY] = {
+			"qcom,cpu-affinity",
+			"qcom,cpu-affinity-r",
+			"qcom,cpu-affinity-w"
+			};
+	char *qos_affinity_mask[SDHCI_QOS_MAX_POLICY] = {
+			"qcom,cpu-affinity-mask",
+			"qcom,cpu-affinity-mask-r",
+			"qcom,cpu-affinity-mask-w"
+			};
+	if (of_property_read_u32(np, "qcom,qos-planes", &qos_planes))
+			qos_planes = SDHCI_QOS_MAX_POLICY;
+
+	if (qos_planes > SDHCI_QOS_MAX_POLICY) {
+		dev_warn(dev, "max qos plane supported is %d\n",
+				SDHCI_QOS_MAX_POLICY);
+		qos_planes = SDHCI_QOS_MAX_POLICY;
+	}
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 	for (i = 0; i < qos_planes; i++) {
 		if (of_get_property(np, qos_planes_name[i],
@@ -1585,7 +1671,11 @@ static int sdhci_msm_populate_qos(struct device *dev,
 
 			if (!(pdata->cpu_dma_latency_tbl_sz == 1 ||
 				pdata->cpu_dma_latency_tbl_sz == 3)) {
+<<<<<<< HEAD
 				dev_warn(dev, "incorrect Qos param passed from DT: %d\n",
+=======
+				dev_warn(dev, "incorrect pm_qos param passed from DT: %d\n",
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 					pdata->cpu_dma_latency_tbl_sz);
 				skip_qos_from_dt = true;
 			} else {
@@ -1596,18 +1686,32 @@ static int sdhci_msm_populate_qos(struct device *dev,
 				if (!pdata->cpu_dma_latency_us)
 					goto out;
 				if (of_property_read_u32_array(np,
+<<<<<<< HEAD
 						qos_planes_name[i],
 						pdata->cpu_dma_latency_us,
 						pdata->cpu_dma_latency_tbl_sz)) {
+=======
+					qos_planes_name[i],
+					pdata->cpu_dma_latency_us,
+					pdata->cpu_dma_latency_tbl_sz)) {
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 					dev_err(dev, "failed to parse cpu-dma-latency\n");
 					goto out;
 				}
 			}
+<<<<<<< HEAD
 			} else {
 				dev_info(dev, "no %s property found\n",
 						qos_planes_name[i]);
 				skip_qos_from_dt = true;
 			}
+=======
+		} else {
+			dev_dbg(dev, "no %s property found\n",
+					qos_planes_name[i]);
+			skip_qos_from_dt = true;
+		}
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 		if (skip_qos_from_dt) {
 			pdata->cpu_dma_latency_tbl_sz = 1;
@@ -1617,7 +1721,12 @@ static int sdhci_msm_populate_qos(struct device *dev,
 				GFP_KERNEL);
 			if (!pdata->cpu_dma_latency_us)
 				goto out;
+<<<<<<< HEAD
 			pdata->cpu_dma_latency_us[0] = MSM_MMC_DEFAULT_CPU_DMA_LATENCY;
+=======
+			pdata->cpu_dma_latency_us[0] =
+				MSM_MMC_DEFAULT_CPU_DMA_LATENCY;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		}
 		sdhci_msm_populate_affinity(pdata, np,
 				qos_affinity_name[i], qos_affinity_mask[i]);
@@ -1628,9 +1737,16 @@ static int sdhci_msm_populate_qos(struct device *dev,
 out:
 	return -EINVAL;
 }
+<<<<<<< HEAD
 /* Parse platform data */
 static struct sdhci_msm_pltfm_data *sdhci_msm_populate_pdata(struct device *dev,
 				struct sdhci_host *host)
+=======
+
+/* Parse platform data */
+static struct sdhci_msm_pltfm_data *sdhci_msm_populate_pdata(struct device *dev,
+						struct sdhci_host *host)
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 {
 	struct sdhci_msm_pltfm_data *pdata = NULL;
 	struct device_node *np = dev->of_node;
@@ -1734,15 +1850,21 @@ static struct sdhci_msm_pltfm_data *sdhci_msm_populate_pdata(struct device *dev,
 	if (of_get_property(np, "qcom,nonhotplug", NULL))
 		pdata->nonhotplug = true;
 
+	if (of_property_read_bool(np, "qcom,no-1p8v"))
+		pdata->no_1p8v = true;
+
 	if (!of_property_read_u32(np, "qcom,dat1-mpm-int",
 				  &mpm_int))
 		pdata->mpm_sdiowakeup_int = mpm_int;
 	else
 		pdata->mpm_sdiowakeup_int = -1;
 
+<<<<<<< HEAD
 	if (of_property_read_bool(np, "qcom,wakeup-on-idle"))
 		host->mmc->wakeup_on_idle = true;
 
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	return pdata;
 out:
 	return NULL;
@@ -3449,14 +3571,20 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 	host->quirks2 |= SDHCI_QUIRK2_IGNORE_DATATOUT_FOR_R1BCMD;
 	host->quirks2 |= SDHCI_QUIRK2_BROKEN_PRESET_VALUE;
 	host->quirks2 |= SDHCI_QUIRK2_USE_RESERVED_MAX_TIMEOUT;
+	host->quirks2 |= SDHCI_QUIRK2_BROKEN_LED_CONTROL;
 
 	if (host->quirks2 & SDHCI_QUIRK2_ALWAYS_USE_BASE_CLOCK)
 		host->quirks2 |= SDHCI_QUIRK2_DIVIDE_TOUT_BY_4;
 
 	host->host_use_default_qos = !msm_host->pdata->use_mod_dynamic_qos;
 	sdhci_msm_print_qos_data(&pdev->dev, host);
+<<<<<<< HEAD
 	dev_info(&pdev->dev, "Host using %s Qos\n", host->host_use_default_qos ?
 					"default" : "mod dynamic");
+=======
+	dev_info(&pdev->dev, "Host using %s pm_qos\n",
+		host->host_use_default_qos ? "default" : "mod dynamic");
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 	host_version = readw_relaxed((host->ioaddr + SDHCI_HOST_VERSION));
 	dev_dbg(&pdev->dev, "Host Version: 0x%x Vendor Version 0x%x\n",
@@ -3478,6 +3606,9 @@ static int sdhci_msm_probe(struct platform_device *pdev)
 
 	host->quirks2 |= SDHCI_QUIRK2_IGN_DATA_END_BIT_ERROR;
 	host->quirks2 |= SDHCI_QUIRK2_ADMA_SKIP_DATA_ALIGNMENT;
+
+	if (msm_host->pdata->no_1p8v)
+		host->quirks2 |= SDHCI_QUIRK2_NO_1_8_V;
 
 	/* Setup PWRCTL irq */
 	msm_host->pwr_irq = platform_get_irq_byname(pdev, "pwr_irq");

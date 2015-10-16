@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -16,6 +16,7 @@
 
 #include <linux/notifier.h>
 #include <linux/sched.h>
+#include <linux/msm_mdp.h>
 
 #define MDP_HISTOGRAM_BL_SCALE_MAX 1024
 #define MDP_HISTOGRAM_BL_LEVEL_MAX 255
@@ -268,6 +269,8 @@ struct mdp3_dma {
 
 	struct mdp3_dma_cursor cursor;
 	struct mdp3_dma_color_correct_config ccs_config;
+	struct mdp_csc_cfg_data ccs_cache;
+
 	struct mdp3_dma_lut_config lut_config;
 	struct mdp3_dma_histogram_config histogram_config;
 	int histo_state;
@@ -281,9 +284,15 @@ struct mdp3_dma {
 	struct fb_cmap *gc_cmap;
 	struct fb_cmap *hist_cmap;
 
+<<<<<<< HEAD
+=======
+	bool (*busy)(void);
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	int (*dma_config)(struct mdp3_dma *dma,
 			struct mdp3_dma_source *source_config,
-			struct mdp3_dma_output_config *output_config);
+			struct mdp3_dma_output_config *output_config,
+			bool splash_screen_active);
 
 	int (*dma_sync_config)(struct mdp3_dma *dma, struct mdp3_dma_source
 				*source_config, struct mdp3_tear_check *te);

@@ -38,6 +38,10 @@
 #define DRIVER_NAME "sdhci"
 #define SDHCI_SUSPEND_TIMEOUT 300 /* 300 ms */
 #define SDHCI_PM_QOS_DEFAULT_DELAY 5 /* 5 ms */
+<<<<<<< HEAD
+=======
+#define SDHCI_MAX_PM_QOS_TIMEOUT   100 /* 100 ms */
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 #define DBG(f, x...) \
 	pr_debug(DRIVER_NAME " [%s()]: " f, __func__,## x)
@@ -177,7 +181,11 @@ show_sdhci_pm_qos_tracer(struct device *dev, struct device_attribute *attr,
 {
 	struct sdhci_host *host = dev_get_drvdata(dev);
 
+<<<<<<< HEAD
 	return snprintf(buf, PAGE_SIZE, "%d\n", host->pm_qos_dbg_tracer);
+=======
+	return snprintf(buf, PAGE_SIZE, "%d ms\n", host->pm_qos_timeout_us);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 }
 
 static ssize_t
@@ -190,7 +198,12 @@ store_sdhci_pm_qos_tracer(struct device *dev, struct device_attribute *attr,
 
 	if (!kstrtou32(buf, 0, &value)) {
 		spin_lock_irqsave(&host->lock, flags);
+<<<<<<< HEAD
 		host->pm_qos_dbg_tracer = !!value;
+=======
+		if (value <= SDHCI_MAX_PM_QOS_TIMEOUT && value > 1)
+			host->pm_qos_timeout_us = value;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		spin_unlock_irqrestore(&host->lock, flags);
 	}
 	return count;
@@ -1543,14 +1556,22 @@ static void sdhci_pm_qos_remove_work(struct work_struct *work)
 		return;
 	}
 	vote = host->last_qos_policy;
+<<<<<<< HEAD
 
 	if (unlikely(!host_qos[vote].cpu_dma_latency_us))
 		return;
 
+=======
+	if (unlikely(!host_qos[vote].cpu_dma_latency_us))
+		return;
+
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	pm_qos_update_request(&(host_qos[vote].pm_qos_req_dma),
 				PM_QOS_DEFAULT_VALUE);
 
 	host->last_qos_policy = -EINVAL;
+<<<<<<< HEAD
 	if (host->pm_qos_dbg_tracer)
 		trace_printk("%s: *** unvote pm_latency_vote = %d, "
 				"pm_req_dma_type = %d, cpumask = 0x%lx, policy = %d, "
@@ -1559,6 +1580,8 @@ static void sdhci_pm_qos_remove_work(struct work_struct *work)
 				cpumask_bits(&(host_qos[vote].pm_qos_req_dma.cpus_affine))[0],
 				host->power_policy, vote);
 
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 }
 
 static inline int sdhci_get_host_qos_index(struct mmc_host *mmc,
@@ -1584,8 +1607,12 @@ static inline int sdhci_get_host_qos_index(struct mmc_host *mmc,
 
 	return vote;
 }
+<<<<<<< HEAD
 static void sdhci_update_pm_qos(struct mmc_host *mmc, struct mmc_request *mrq,
 				bool enable)
+=======
+static void sdhci_update_pm_qos(struct mmc_host *mmc, struct mmc_request *mrq)
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 {
 	struct sdhci_host *host = mmc_priv(mmc);
 	struct sdhci_host_qos *host_qos = host->host_qos;
@@ -1599,6 +1626,10 @@ static void sdhci_update_pm_qos(struct mmc_host *mmc, struct mmc_request *mrq,
 				mmc_hostname(mmc), vote);
 		goto out;
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	if (unlikely(!host_qos[vote].cpu_dma_latency_us))
 		goto out;
 
@@ -1609,6 +1640,7 @@ static void sdhci_update_pm_qos(struct mmc_host *mmc, struct mmc_request *mrq,
 	if (host_qos[vote].cpu_dma_latency_tbl_sz > 1)
 		pol_index = host->power_policy;
 
+<<<<<<< HEAD
 	if (enable) {
 		if ((host->last_qos_policy != SDHCI_QOS_READ_WRITE) &&
 			(host->last_qos_policy != -EINVAL) &&
@@ -1642,6 +1674,18 @@ static void sdhci_update_pm_qos(struct mmc_host *mmc, struct mmc_request *mrq,
 					host->power_policy,
 					mrq->cmd->opcode, vote);
 	}
+=======
+	if ((host->last_qos_policy != SDHCI_QOS_READ_WRITE) &&
+		(host->last_qos_policy != -EINVAL) &&
+		(host->last_qos_policy != vote)) {
+		pm_qos_update_request(
+			&(host_qos[host->last_qos_policy].pm_qos_req_dma),
+			PM_QOS_DEFAULT_VALUE);
+		}
+	pm_qos_update_request(&(host_qos[vote].pm_qos_req_dma),
+		host_qos[vote].cpu_dma_latency_us[pol_index]);
+	host->last_qos_policy = vote;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 out:
 	return;
 }
@@ -1781,7 +1825,11 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
 
 	sdhci_runtime_pm_get(host);
 	cancel_delayed_work_sync(&host->pm_qos_work);
+<<<<<<< HEAD
 	sdhci_update_pm_qos(mmc, mrq, true);
+=======
+	sdhci_update_pm_qos(mmc, mrq);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	if (sdhci_check_state(host)) {
 		sdhci_dump_state(host);
 		WARN(1, "sdhci in bad state");
@@ -1815,7 +1863,8 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
 	WARN_ON(host->mrq != NULL);
 
 #ifndef SDHCI_USE_LEDS_CLASS
-	sdhci_activate_led(host);
+	if (!(host->quirks2 & SDHCI_QUIRK2_BROKEN_LED_CONTROL))
+		sdhci_activate_led(host);
 #endif
 
 	/*
@@ -2822,7 +2871,8 @@ static void sdhci_tasklet_finish(unsigned long param)
 	host->auto_cmd_err_sts = 0;
 
 #ifndef SDHCI_USE_LEDS_CLASS
-	sdhci_deactivate_led(host);
+	if (!(host->quirks2 & SDHCI_QUIRK2_BROKEN_LED_CONTROL))
+		sdhci_deactivate_led(host);
 #endif
 
 	mmiowb();
@@ -2837,9 +2887,15 @@ static void sdhci_tasklet_finish(unsigned long param)
 	 */
 
 	if (host->power_policy == SDHCI_POWER_SAVE_MODE)
+<<<<<<< HEAD
 		delay = SDHCI_PM_QOS_DEFAULT_DELAY / 2;
 	else
 		delay = 2 * SDHCI_PM_QOS_DEFAULT_DELAY;
+=======
+		delay = host->pm_qos_timeout_us / 2;
+	else
+		delay = 2 * host->pm_qos_timeout_us;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	schedule_delayed_work(&host->pm_qos_work, msecs_to_jiffies(delay));
 
 	mmc_request_done(host->mmc, mrq);
@@ -3538,6 +3594,7 @@ static int sdhci_is_adma2_64bit(struct sdhci_host *host)
 }
 #endif
 
+<<<<<<< HEAD
 #ifdef CONFIG_SMP
 static void sdhci_set_pmqos_req_type(struct sdhci_host *host)
 {
@@ -3567,6 +3624,8 @@ static void sdhci_set_pmqos_req_type(struct sdhci_host *host)
 }
 #endif
 
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 int sdhci_add_host(struct sdhci_host *host)
 {
 	struct mmc_host *mmc;
@@ -4100,23 +4159,26 @@ int sdhci_add_host(struct sdhci_host *host)
 #endif
 
 #ifdef SDHCI_USE_LEDS_CLASS
-	snprintf(host->led_name, sizeof(host->led_name),
-		"%s::", mmc_hostname(mmc));
-	host->led.name = host->led_name;
-	host->led.brightness = LED_OFF;
-	host->led.default_trigger = mmc_hostname(mmc);
-	host->led.brightness_set = sdhci_led_control;
+	if (!(host->quirks2 & SDHCI_QUIRK2_BROKEN_LED_CONTROL)) {
+		snprintf(host->led_name, sizeof(host->led_name),
+			"%s::", mmc_hostname(mmc));
+		host->led.name = host->led_name;
+		host->led.brightness = LED_OFF;
+		host->led.default_trigger = mmc_hostname(mmc);
+		host->led.brightness_set = sdhci_led_control;
 
-	ret = led_classdev_register(mmc_dev(mmc), &host->led);
-	if (ret) {
-		pr_err("%s: Failed to register LED device: %d\n",
-		       mmc_hostname(mmc), ret);
-		goto reset;
+		ret = led_classdev_register(mmc_dev(mmc), &host->led);
+		if (ret) {
+			pr_err("%s: Failed to register LED device: %d\n",
+			       mmc_hostname(mmc), ret);
+			goto reset;
+		}
 	}
 #endif
 
 	mmiowb();
 	if (host->host_qos[SDHCI_QOS_READ_WRITE].cpu_dma_latency_us) {
+<<<<<<< HEAD
 		sdhci_set_pmqos_req_type(host);
 		if (host->host_use_default_qos) {
 			pm_qos_add_request(&(host->host_qos[SDHCI_QOS_READ_WRITE].pm_qos_req_dma),
@@ -4137,6 +4199,31 @@ int sdhci_add_host(struct sdhci_host *host)
 		host->pm_qos_dbg.attr.name = "pm_qos_dbg_tracer";
 		host->pm_qos_dbg.attr.mode = S_IRUGO | S_IWUSR;
 		ret = device_create_file(mmc_dev(mmc), &host->pm_qos_dbg);
+=======
+		host->pm_qos_timeout_us = SDHCI_PM_QOS_DEFAULT_DELAY;
+		if (host->host_use_default_qos) {
+			pm_qos_add_request(
+			&(host->host_qos[SDHCI_QOS_READ_WRITE].pm_qos_req_dma),
+				PM_QOS_CPU_DMA_LATENCY,
+				PM_QOS_DEFAULT_VALUE);
+		} else {
+			pm_qos_add_request(
+			    &(host->host_qos[SDHCI_QOS_READ].pm_qos_req_dma),
+			    PM_QOS_CPU_DMA_LATENCY,
+			    PM_QOS_DEFAULT_VALUE);
+			pm_qos_add_request(
+			    &(host->host_qos[SDHCI_QOS_WRITE].pm_qos_req_dma),
+			    PM_QOS_CPU_DMA_LATENCY,
+			    PM_QOS_DEFAULT_VALUE);
+		}
+
+		host->pm_qos_tout.show = show_sdhci_pm_qos_tout;
+		host->pm_qos_tout.store = store_sdhci_pm_qos_tout;
+		sysfs_attr_init(&host->pm_qos_tout.attr);
+		host->pm_qos_tout.attr.name = "pm_qos_unvote_delay";
+		host->pm_qos_tout.attr.mode = S_IRUGO | S_IWUSR;
+		ret = device_create_file(mmc_dev(mmc), &host->pm_qos_tout);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		if (ret)
 			pr_err("%s: cannot create pm_qos_dbg_tracer %d\n",
 					mmc_hostname(mmc), ret);
@@ -4195,6 +4282,7 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
 
 	sdhci_update_power_policy(host, SDHCI_POWER_SAVE_MODE);
 	sdhci_disable_card_detection(host);
+<<<<<<< HEAD
 
 	if (host->host_qos[SDHCI_QOS_READ_WRITE].cpu_dma_latency_us) {
 		if (host->host_use_default_qos)
@@ -4202,12 +4290,24 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
 		else {
 			pm_qos_remove_request(&(host->host_qos[SDHCI_QOS_READ].pm_qos_req_dma));
 			pm_qos_remove_request(&(host->host_qos[SDHCI_QOS_WRITE].pm_qos_req_dma));
+=======
+	if (host->host_qos[SDHCI_QOS_READ_WRITE].cpu_dma_latency_us) {
+		if (host->host_use_default_qos)
+			pm_qos_remove_request(
+			&(host->host_qos[SDHCI_QOS_READ_WRITE].pm_qos_req_dma));
+		else {
+			pm_qos_remove_request(
+			&(host->host_qos[SDHCI_QOS_READ].pm_qos_req_dma));
+			pm_qos_remove_request(
+			&(host->host_qos[SDHCI_QOS_WRITE].pm_qos_req_dma));
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		}
 	}
 	mmc_remove_host(host->mmc);
 
 #ifdef SDHCI_USE_LEDS_CLASS
-	led_classdev_unregister(&host->led);
+	if (!(host->quirks2 & SDHCI_QUIRK2_BROKEN_LED_CONTROL))
+		led_classdev_unregister(&host->led);
 #endif
 
 	if (!dead)

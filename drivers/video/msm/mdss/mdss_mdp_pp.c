@@ -440,7 +440,10 @@ static int pp_ad_linearize_bl(struct mdss_ad_info *ad, u32 bl, u32 *bl_out,
 		int inv);
 static int pp_ad_calc_bl(struct msm_fb_data_type *mfd, int bl_in, int *bl_out,
 		bool *bl_out_notify);
+<<<<<<< HEAD
 static int pp_ad_shutdown_cleanup(struct msm_fb_data_type *mfd);
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 static int pp_num_to_side(struct mdss_mdp_ctl *ctl, u32 num);
 static inline bool pp_sts_is_enabled(u32 sts, int side);
 static inline void pp_sts_set_split_bits(u32 *sts, u32 bits);
@@ -2162,10 +2165,14 @@ int mdss_mdp_pp_overlay_init(struct msm_fb_data_type *mfd)
 		return -EPERM;
 	}
 
+<<<<<<< HEAD
 	if (mdata->nad_cfgs) {
 		mfd->mdp.ad_calc_bl = pp_ad_calc_bl;
 		mfd->mdp.ad_shutdown_cleanup = pp_ad_shutdown_cleanup;
 	}
+=======
+	mfd->mdp.ad_calc_bl = pp_ad_calc_bl;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	return 0;
 }
 
@@ -2230,12 +2237,23 @@ static int pp_ad_calc_bl(struct msm_fb_data_type *mfd, int bl_in, int *bl_out,
 	}
 	*bl_out = temp;
 
+<<<<<<< HEAD
+=======
+	if (!mfd->ad_bl_level)
+		mfd->ad_bl_level = bl_in;
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	if (ad_bl_out != mfd->ad_bl_level) {
 		mfd->ad_bl_level = ad_bl_out;
 		*bl_out_notify = true;
 	}
 
+<<<<<<< HEAD
 	pp_ad_invalidate_input(mfd);
+=======
+	if (*bl_out_notify)
+		pp_ad_invalidate_input(mfd);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	mutex_unlock(&ad->lock);
 	return 0;
 }

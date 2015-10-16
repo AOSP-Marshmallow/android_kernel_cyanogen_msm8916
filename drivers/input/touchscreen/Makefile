@@ -91,5 +91,9 @@ obj-$(CONFIG_TOUCHSCREEN_WT_GT9XX)	+= gt9xx_wt/
 
 obj-$(CONFIG_TOUCHSCREEN_BU21150)	+= bu21150.o
 obj-$(CONFIG_INPUT_MT_WRAPPER)		+= input_mt_wrapper.o
+<<<<<<< HEAD
 
 obj-$(CONFIG_MACH_YULONG)		+= touchscreen_yl.o
+=======
+obj-$(CONFIG_TOUCHSCREEN_IT7260_I2C)    += it7258_ts_i2c.o
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0

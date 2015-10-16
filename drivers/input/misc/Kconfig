@@ -745,6 +745,7 @@ config SENSORS_AP3426
 	  To compile this driver as a module, choose M here: the
 	  module will be called ap3426.
 
+<<<<<<< HEAD
 config SENSORS_AP3426_CM
 	tristate "AP3426 3-in-1 digital ALPS+PS+IRLED sensor driver (CM variant)"
 	depends on I2C
@@ -755,6 +756,8 @@ config SENSORS_AP3426_CM
 	  To compile this driver as a module, choose M here: the
 	  module will be called ap3426.
 
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 config SENSORS_LTR553
 	tristate "LTR553 light and proximity device driver"
 	depends on I2C

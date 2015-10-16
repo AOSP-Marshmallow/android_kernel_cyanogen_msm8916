@@ -32,7 +32,10 @@ struct aw2013_platform_data {
 	int hold_time_ms;
 	int fall_time_ms;
 	int off_time_ms;
+<<<<<<< HEAD
 	int awgpio;
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	struct aw2013_led *led;
 };
 

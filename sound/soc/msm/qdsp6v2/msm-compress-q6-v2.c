@@ -200,10 +200,34 @@ static int msm_compr_set_volume(struct snd_compr_stream *cstream,
 		return -EPERM;
 	}
 	prtd = cstream->runtime->private_data;
+<<<<<<< HEAD
 
 	if (!prtd || !prtd->audio_client) {
 		pr_err("%s: invalid session prtd or no audio client", __func__);
 		return rc;
+=======
+	if (prtd && prtd->audio_client) {
+		if (prtd->compr_passthr != LEGACY_PCM) {
+			pr_debug("%s: No volume config for passthrough %d\n",
+				 __func__, prtd->compr_passthr);
+			return rc;
+		}
+		pr_debug("%s: call q6asm_set_lrgain\n", __func__);
+		rc = q6asm_set_lrgain(prtd->audio_client, volume_l, volume_r);
+		if (rc < 0) {
+			pr_err("%s: Send LR gain command failed rc=%d\n",
+				__func__, rc);
+		} else {
+			pr_debug("%s: now calling msm_dts_eagle_set_volume\n",
+				 __func__);
+			rc = msm_dts_eagle_set_volume(prtd->audio_client,
+						      volume_l, volume_r);
+			if (rc < 0) {
+				pr_err("%s: Send Volume command failed (DTS_EAGLE) rc=%d\n",
+						__func__, rc);
+			}
+		}
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	}
 
 	if (prtd->compr_passthr != LEGACY_PCM) {
@@ -2075,6 +2099,7 @@ static int msm_compr_set_metadata(struct snd_compr_stream *cstream,
 			prtd->codec_param.codec.options.flac_dec.min_frame_size;
 		pr_debug("%s: min_blk_size %d max_blk_size %d\n",
 			__func__, flac_cfg.min_blk_size, flac_cfg.max_blk_size);
+<<<<<<< HEAD
 
 		ret = q6asm_stream_media_format_block_flac(ac, &flac_cfg,
 								ac->stream_id);
@@ -2084,6 +2109,14 @@ static int msm_compr_set_metadata(struct snd_compr_stream *cstream,
 
 		prtd->partial_drain_delay = msm_compr_get_partial_drain_delay(
 				flac_cfg.min_blk_size, prtd->sample_rate);
+=======
+
+		ret = q6asm_stream_media_format_block_flac(ac, &flac_cfg,
+								ac->stream_id);
+		if (ret < 0)
+			pr_err("%s: CMD Format block failed ret %d\n",
+				__func__, ret);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	}
 	return 0;
 }

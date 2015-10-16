@@ -1368,6 +1368,7 @@ void set_hmp_defaults(void)
 	sched_init_task_load_windows =
 		div64_u64((u64)sysctl_sched_init_task_load_pct *
 			  (u64)sched_ravg_window, 100);
+<<<<<<< HEAD
 
 	sched_upmigrate_min_nice = sysctl_sched_upmigrate_min_nice;
 }
@@ -1427,6 +1428,10 @@ int sched_get_cpu_mostly_idle_nr_run(int cpu)
 	struct rq *rq = cpu_rq(cpu);
 
 	return rq->mostly_idle_nr_run;
+=======
+
+	sched_upmigrate_min_nice = sysctl_sched_upmigrate_min_nice;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 }
 
 /* Is a task "big" on its current cpu */
@@ -1768,7 +1773,11 @@ static int best_small_task_cpu(struct task_struct *p, int sync)
 		best_lpm_sibling_cstate = INT_MAX;
 	int best_lpm_nonsibling_cpu = -1,
 		best_lpm_nonsibling_cstate = INT_MAX;
+<<<<<<< HEAD
 	int cluster_cost, i, cstate;
+=======
+	int cluster_cost, i, prev_cpu = task_cpu(p), cstate;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	u64 tload, cpu_load;
 
 	struct cpumask search_cpus, fb_search_cpus;
@@ -1777,7 +1786,7 @@ static int best_small_task_cpu(struct task_struct *p, int sync)
 	cpumask_and(&search_cpus,  tsk_cpus_allowed(p), cpu_online_mask);
 
 	if (cpumask_empty(&search_cpus))
-		return task_cpu(p);
+		return prev_cpu;
 
 	/*
 	 * If a CPU is doing a sync wakeup and it only has one currently
@@ -1788,6 +1797,20 @@ static int best_small_task_cpu(struct task_struct *p, int sync)
 		return cpu;
 
 	cluster_cost = power_cost_task(p, cpu);
+<<<<<<< HEAD
+=======
+	/*
+	 * Optimization to steer task towards the previous CPU
+	 * if it belongs to the waker cluster and it is not idle
+	 * but mostly idle.
+	 *
+	 */
+	if (cpumask_test_cpu(prev_cpu, &search_cpus) &&
+	   !power_delta_exceeded(power_cost_task(p, prev_cpu), cluster_cost) &&
+	   !cpu_rq(prev_cpu)->cstate &&
+	   mostly_idle_cpu_sync(prev_cpu, cpu_load_sync(prev_cpu, sync), sync))
+		return prev_cpu;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 	cpumask_copy(&fb_search_cpus, &search_cpus);
 
@@ -1815,7 +1838,9 @@ static int best_small_task_cpu(struct task_struct *p, int sync)
 			cstate = rq->cstate;
 			/* This CPU is within the same cluster as the waker. */
 			if (cstate) {
-				if (cstate < best_lpm_sibling_cstate) {
+				if (cstate < best_lpm_sibling_cstate ||
+				   (cstate == best_lpm_sibling_cstate &&
+				   i == prev_cpu)) {
 					best_lpm_sibling_cpu = i;
 					best_lpm_sibling_cstate = cstate;
 				}
@@ -1823,10 +1848,20 @@ static int best_small_task_cpu(struct task_struct *p, int sync)
 				return i;
 			} else {
 				cpu_load = cpu_load_sync(i, sync);
+<<<<<<< HEAD
 				if (cpu_load < best_nonlpm_sibling_load &&
 				    !spill_threshold_crossed(
 					    scale_load_to_cpu(task_load(p), i),
 					    cpu_load, rq)) {
+=======
+				if ((cpu_load < best_nonlpm_sibling_load ||
+				    (cpu_load == best_nonlpm_sibling_load &&
+				    i == prev_cpu)) &&
+				    !spill_threshold_crossed(
+						scale_load_to_cpu(
+							task_load(p), i),
+							cpu_load, rq)) {
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 					best_nonlpm_sibling_cpu = i;
 					best_nonlpm_sibling_load = cpu_load;
 				}
@@ -1847,7 +1882,9 @@ static int best_small_task_cpu(struct task_struct *p, int sync)
 
 		/* This CPU is not within the same cluster as the waker. */
 		if (cstate) {
-			if (cstate < best_lpm_nonsibling_cstate) {
+			if (cstate < best_lpm_nonsibling_cstate ||
+			   (cstate == best_lpm_nonsibling_cstate &&
+			   i == prev_cpu)) {
 				best_lpm_nonsibling_cpu = i;
 				best_lpm_nonsibling_cstate = cstate;
 			}
@@ -1856,8 +1893,16 @@ static int best_small_task_cpu(struct task_struct *p, int sync)
 		} else {
 			cpu_load = cpu_load_sync(i, sync);
 			tload = scale_load_to_cpu(task_load(p), cpu);
+<<<<<<< HEAD
 			if (cpu_load < best_nonlpm_nonsibling_load &&
 			    !spill_threshold_crossed(tload, cpu_load, rq)) {
+=======
+			if ((cpu_load < best_nonlpm_nonsibling_load ||
+			    (cpu_load == best_nonlpm_nonsibling_load &&
+			    i == prev_cpu)) &&
+			    !spill_threshold_crossed(
+					tload, cpu_load, rq)) {
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 				best_nonlpm_nonsibling_cpu = i;
 				best_nonlpm_nonsibling_load = cpu_load;
 			}
@@ -1896,6 +1941,7 @@ static int skip_freq_domain(struct rq *task_rq, struct rq * rq, int reason)
 
 	default:
 		return 0;
+<<<<<<< HEAD
 	}
 
         return skip;
@@ -1945,6 +1991,22 @@ static int select_packing_target(struct task_struct *p, int best_cpu)
 	}
 
 	return target;
+=======
+	}
+
+        return skip;
+}
+
+static int skip_cpu(struct rq *task_rq, struct rq * rq, int cpu, int reason)
+{
+        if (!reason)
+                return 0;
+
+        if (is_reserved(cpu))
+                return 1;
+
+	return rq == task_rq;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 }
 
 
@@ -1953,6 +2015,10 @@ static int select_best_cpu(struct task_struct *p, int target, int reason,
 			   int sync)
 {
 	int i, j, best_cpu = -1, fallback_idle_cpu = -1, min_cstate_cpu = -1;
+<<<<<<< HEAD
+=======
+	int prev_cpu;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	int cpu_cost, min_cost = INT_MAX;
 	int min_idle_cost = INT_MAX, min_busy_cost = INT_MAX;
 	u64 tload, cpu_load;
@@ -1995,6 +2061,11 @@ static int select_best_cpu(struct task_struct *p, int target, int reason,
 
 		if (skip_cpu(trq, rq, i, reason))
 			continue;
+<<<<<<< HEAD
+=======
+
+		prev_cpu = (i == task_cpu(p));
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 		/*
 		 * The least-loaded mostly-idle CPU where the task
@@ -2012,7 +2083,13 @@ static int select_best_cpu(struct task_struct *p, int target, int reason,
 						&rq->freq_domain_cpumask) {
 				cpu_load = cpu_load_sync(j, sync);
 				if (mostly_idle_cpu_sync(j, cpu_load, sync)) {
+<<<<<<< HEAD
 					if (cpu_load < min_fallback_load) {
+=======
+					if (cpu_load < min_fallback_load ||
+					    (cpu_load == min_fallback_load &&
+							 j == task_cpu(p))) {
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 						min_fallback_load = cpu_load;
 						fallback_idle_cpu = j;
 					}
@@ -2068,7 +2145,12 @@ static int select_best_cpu(struct task_struct *p, int target, int reason,
 				if (prefer_idle && min_cstate == 0)
 					clear_same_powerband_cpus(rq,
 								  &search_cpus);
+<<<<<<< HEAD
 			} else if (cpu_cost < min_idle_cost) {
+=======
+			} else if (cpu_cost < min_idle_cost ||
+				(cpu_cost == min_idle_cost && prev_cpu)) {
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 				min_idle_cost = cpu_cost;
 				min_cstate_cpu = i;
 			}
@@ -2094,7 +2176,8 @@ static int select_best_cpu(struct task_struct *p, int target, int reason,
 		 * This is rare but when it does happen opt for the
 		 * more power efficient CPU option.
 		 */
-		if (cpu_cost < min_busy_cost) {
+		if (cpu_cost < min_busy_cost ||
+			(cpu_cost == min_busy_cost && prev_cpu)) {
 			min_busy_cost = cpu_cost;
 			best_cpu = i;
 		}
@@ -2276,11 +2359,16 @@ int sched_hmp_proc_update_handler(struct ctl_table *table, int write,
 	int ret;
 	unsigned int old_val;
 	unsigned int *data = (unsigned int *)table->data;
+<<<<<<< HEAD
 	int update_min_nice = 0;
 
 	mutex_lock(&policy_mutex);
 
 	old_val = *data;
+=======
+	unsigned int old_val = *data;
+	int update_min_nice = 0;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 	ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 
@@ -2293,8 +2381,17 @@ int sched_hmp_proc_update_handler(struct ctl_table *table, int write,
 	if (data == (unsigned int *)&sysctl_sched_upmigrate_min_nice)
 		update_min_nice = 1;
 
+<<<<<<< HEAD
 	if (update_min_nice) {
 		if ((*(int *)data) < -20 || (*(int *)data) > 19) {
+=======
+	if (write && (old_val == *data))
+		return 0;
+
+	if ((sysctl_sched_downmigrate_pct > sysctl_sched_upmigrate_pct) ||
+		(sysctl_sched_mostly_idle_load_pct >
+			sysctl_sched_spill_load_pct) || *data > 100) {
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 			*data = old_val;
 			ret = -EINVAL;
 			goto done;
@@ -2307,6 +2404,23 @@ int sched_hmp_proc_update_handler(struct ctl_table *table, int write,
 			*data = old_val;
 			ret = -EINVAL;
 			goto done;
+		}
+	}
+
+	if (data == (unsigned int *)&sysctl_sched_upmigrate_min_nice)
+		update_min_nice = 1;
+
+	if (update_min_nice) {
+		if ((*(int *)data) < -20 || (*(int *)data) > 19) {
+			*data = old_val;
+			return -EINVAL;
+		}
+	} else {
+		/* all tunables other than min_nice are in percentage */
+		if (sysctl_sched_downmigrate_pct >
+		    sysctl_sched_upmigrate_pct || *data > 100) {
+			*data = old_val;
+			return -EINVAL;
 		}
 	}
 

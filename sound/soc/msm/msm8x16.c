@@ -332,6 +332,48 @@ static int enable_spk_ext_pa(struct snd_soc_codec *codec, int enable)
 	return 0;
 }
 
+static int msm_auxpcm_be_params_fixup(struct snd_soc_pcm_runtime *rtd,
+					struct snd_pcm_hw_params *params)
+{
+	struct snd_interval *rate =
+	    hw_param_interval(params, SNDRV_PCM_HW_PARAM_RATE);
+
+	struct snd_interval *channels =
+	    hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
+
+	rate->min = rate->max = msm8909_auxpcm_rate;
+	channels->min = channels->max = 1;
+
+	return 0;
+}
+
+static int enable_spk_ext_pa(struct snd_soc_codec *codec, int enable)
+{
+	struct snd_soc_card *card = codec->card;
+	struct msm8916_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
+	int ret = 0;
+
+	if (!gpio_is_valid(pdata->spk_ext_pa_gpio)) {
+		pr_err("%s: Invalid gpio: %d\n", __func__,
+			pdata->spk_ext_pa_gpio);
+		return -EINVAL;
+	}
+
+	pr_debug("%s: %s external speaker PA\n", __func__,
+		enable ? "Enable" : "Disable");
+	ret = pinctrl_select_state(pinctrl_info.pinctrl,
+				pinctrl_info.cdc_lines_act);
+	if (ret < 0) {
+		pr_err("%s: failed to active cdc gpio's\n",
+				__func__);
+		return -EINVAL;
+	}
+
+	gpio_set_value_cansleep(pdata->spk_ext_pa_gpio, enable);
+
+	return 0;
+}
+
 static int msm_pri_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 				struct snd_pcm_hw_params *params)
 {
@@ -1181,11 +1223,19 @@ static int msm_prim_auxpcm_startup(struct snd_pcm_substream *substream)
 	vaddr = pdata->vaddr_gpio_mux_mic_ctl;
 	val = ioread32(vaddr);
 	val = val | 0x2020002;
+<<<<<<< HEAD
 	iowrite32(val, vaddr);
 	vaddr = pdata->vaddr_gpio_mux_pcm_ctl;
 	val = ioread32(vaddr);
 	val = val | 0x01;
 	iowrite32(val, vaddr);
+=======
+	iowrite32(val, vaddr);
+	vaddr = pdata->vaddr_gpio_mux_pcm_ctl;
+	val = ioread32(vaddr);
+	val = val | 0x01;
+	iowrite32(val, vaddr);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	msm8x16_enable_codec_ext_clk(codec, 1, true);
 	atomic_inc(&auxpcm_mi2s_clk_ref);
 
@@ -1569,7 +1619,13 @@ static void *def_msm8x16_wcd_mbhc_cal(void)
 	 * one for current source and another for Micbias.
 	 * all btn_low corresponds to threshold for current source
 	 * all bt_high corresponds to threshold for Micbias
+	 * Below thresholds are based on following resistances
+	 * 0-70    == Button 0
+	 * 110-180 == Button 1
+	 * 210-290 == Button 2
+	 * 360-680 == Button 3
 	 */
+<<<<<<< HEAD
 #ifdef CONFIG_MACH_CP8675
 	btn_low[0] = 50;
 	btn_high[0] = 50;
@@ -1593,6 +1649,18 @@ static void *def_msm8x16_wcd_mbhc_cal(void)
 	btn_low[4] = 137;
 	btn_high[4] = 137;
 #endif
+=======
+	btn_low[0] = 75;
+	btn_high[0] = 75;
+	btn_low[1] = 150;
+	btn_high[1] = 150;
+	btn_low[2] = 237;
+	btn_high[2] = 237;
+	btn_low[3] = 450;
+	btn_high[3] = 450;
+	btn_low[4] = 500;
+	btn_high[4] = 500;
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 	return msm8x16_wcd_cal;
 }
@@ -1694,6 +1762,7 @@ static struct snd_soc_ops msm_pri_auxpcm_be_ops = {
 	.shutdown = msm_prim_auxpcm_shutdown,
 };
 
+<<<<<<< HEAD
 #ifdef CONFIG_MACH_T86519A1
 static int wm8998_snd_startup_clk(void)
 {
@@ -1856,6 +1925,8 @@ static int wm8998_init(struct snd_soc_pcm_runtime *rtd)
 
 #endif
 
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 static struct snd_soc_dai_link msm8x16_9306_dai[] = {
 	/* Backend DAI Links */
 	{
@@ -2309,6 +2380,22 @@ static struct snd_soc_dai_link msm8x16_dai[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
+	{ /* hw:x, 26 */
+		.name = "QCHAT",
+		.stream_name = "QCHAT",
+		.cpu_dai_name   = "QCHAT",
+		.platform_name  = "msm-pcm-voice",
+		.dynamic = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+				SND_SOC_DPCM_TRIGGER_POST},
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		/* this dainlink has playback support */
+		.ignore_pmdown_time = 1,
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.be_id = MSM_FRONTEND_DAI_QCHAT,
+	},
 	/* Backend I2S DAI Links */
 	{
 		.name = LPASS_BE_PRI_MI2S_RX,
@@ -2356,6 +2443,7 @@ static struct snd_soc_dai_link msm8x16_dai[] = {
 		.stream_name = "Quaternary MI2S Playback",
 		.cpu_dai_name = "msm-dai-q6-mi2s.3",
 		.platform_name = "msm-pcm-routing",
+<<<<<<< HEAD
 #ifdef CONFIG_MACH_T86519A1
 		.codec_name = "vegas-codec",
 		.codec_dai_name = "vegas-aif1",
@@ -2367,6 +2455,10 @@ static struct snd_soc_dai_link msm8x16_dai[] = {
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 #endif
+=======
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		.no_pcm = 1,
 		.be_id = MSM_BACKEND_DAI_QUATERNARY_MI2S_RX,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
@@ -2952,7 +3044,7 @@ static int msm8x16_asoc_machine_probe(struct platform_device *pdev)
 	if (!pdata) {
 		dev_err(&pdev->dev, "Can't allocate msm8x16_asoc_mach_data\n");
 		ret = -ENOMEM;
-		goto err;
+		goto err1;
 	}
 
 	pdata->vaddr_gpio_mux_spkr_ctl =
@@ -3148,13 +3240,17 @@ static int msm8x16_asoc_machine_probe(struct platform_device *pdev)
 	}
 	return 0;
 err:
-	devm_kfree(&pdev->dev, pdata);
 	if (pdata->vaddr_gpio_mux_spkr_ctl)
 		iounmap(pdata->vaddr_gpio_mux_spkr_ctl);
 	if (pdata->vaddr_gpio_mux_mic_ctl)
 		iounmap(pdata->vaddr_gpio_mux_mic_ctl);
 	if (pdata->vaddr_gpio_mux_pcm_ctl)
 		iounmap(pdata->vaddr_gpio_mux_pcm_ctl);
+<<<<<<< HEAD
+=======
+	devm_kfree(&pdev->dev, pdata);
+err1:
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	return ret;
 }
 

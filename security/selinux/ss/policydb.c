@@ -148,6 +148,14 @@ static struct policydb_compat_info policydb_compat[] = {
 		.sym_num	= SYM_NUM,
 		.ocon_num	= OCON_NUM,
 	},
+<<<<<<< HEAD
+=======
+	{
+		.version	= POLICYDB_VERSION_IOCTL_OPERATIONS,
+		.sym_num	= SYM_NUM,
+		.ocon_num	= OCON_NUM,
+	},
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 };
 
 static struct policydb_compat_info *policydb_lookup_compat(int version)

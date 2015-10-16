@@ -1,5 +1,7 @@
 /* drivers/input/misc/akm8963.c - akm8963 compass driver
  *
+ * Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ *
  * Copyright (C) 2007-2008 HTC Corporation.
  * Author: Hou-Kun Chen <houkun.chen@gmail.com>
  *
@@ -52,10 +54,18 @@
 #define STATUS_ERROR(st)	(((st)&0x08) != 0x0)
 #define REG_CNTL1_MODE(reg_cntl1)	(reg_cntl1 & 0x0F)
 
+<<<<<<< HEAD
 #define POLL_MS_100HZ 10
 /*Max Single Measure mode supported frequency */
 #define MAX_SNG_MEASURE_SUPPORTED 20
 
+=======
+/*Max Single Measure mode supported frequency */
+#define MAX_SNG_MEASURE_SUPPORTED 20
+
+#define POLL_MS_100HZ 10
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 /* Save last device state for power down */
 struct akm_sensor_state {
 	bool power_on;
@@ -125,6 +135,7 @@ static struct sensors_classdev sensors_cdev = {
 	.resolution = "0.15",
 	.sensor_power = "0.35",
 	.min_delay = 10000,
+	.max_delay = 10000,
 	.fifo_reserved_event_count = 0,
 	.fifo_max_event_count = 0,
 	.enabled = 0,
@@ -463,7 +474,14 @@ static int AKECS_GetData_Poll(
 
 	/* Check ST bit */
 	if (!(AKM_DRDY_IS_HIGH(buffer[0])))
+<<<<<<< HEAD
 		dev_dbg(&akm->i2c->dev, "DRDY is low. Use last value.\n");
+=======
+	{
+		dev_dbg(&akm->i2c->dev, "DRDY is low. Use last value.\n");
+		return 0;
+	}
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 
 	/* Read rest data */
 	buffer[1] = AKM_REG_STATUS + 1;
@@ -886,7 +904,12 @@ static int akm_enable_set(struct sensors_classdev *sensors_cdev,
 			if (akm->delay[MAG_DATA_FLAG] <
 					MAX_SNG_MEASURE_SUPPORTED) {
 				AKECS_SetMode(akm,
+<<<<<<< HEAD
 					AK8963_MODE_CONT2_MEASURE);
+=======
+						AK8963_MODE_CONT2_MEASURE |
+						AKM8963_BIT_OP_16);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 				akm->use_sng_measure = false;
 			} else {
 				AKECS_SetMode(akm,
@@ -1513,7 +1536,11 @@ static int akm_compass_resume(struct device *dev)
 			akm->use_poll &&
 			akm->pdata->auto_report)
 			ktime = ktime_set(0,
+<<<<<<< HEAD
 				akm->delay[MAG_DATA_FLAG] * NSEC_PER_MSEC);
+=======
+			akm->delay[MAG_DATA_FLAG] * NSEC_PER_MSEC);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 			hrtimer_start(&akm->mag_timer, ktime, HRTIMER_MODE_REL);
 	}
 	dev_dbg(&akm->i2c->dev, "resumed\n");
@@ -1788,6 +1815,7 @@ static int mag_poll_thread(void *data)
 		wait_event_interruptible(akm->mag_wq,
 			((akm->mag_wkp_flag != 0) || kthread_should_stop()));
 		akm->mag_wkp_flag = 0;
+<<<<<<< HEAD
 
 		if (kthread_should_stop())
 			break;
@@ -1822,6 +1850,44 @@ static int mag_poll_thread(void *data)
 		tmp = tmp * akm->sense_conf[0] / 256 + tmp / 2;
 		mag_x = tmp;
 
+=======
+
+		if (kthread_should_stop())
+			break;
+
+		mutex_lock(&akm->val_mutex);
+		if (akm->mag_delay_change) {
+			if (akm->delay[MAG_DATA_FLAG] <= POLL_MS_100HZ)
+				set_wake_up_idle(true);
+			else
+				set_wake_up_idle(false);
+			akm->mag_delay_change = false;
+		}
+		mutex_unlock(&akm->val_mutex);
+
+		timestamp = ktime_get_boottime();
+
+		ret = AKECS_GetData_Poll(akm, dat_buf, AKM_SENSOR_DATA_SIZE);
+		if (ret < 0) {
+			dev_warn(&s_akm->i2c->dev, "Get data failed\n");
+			goto exit;
+		}
+
+		tmp = 0xF & (dat_buf[7] + dat_buf[0]);
+		if (STATUS_ERROR(tmp)) {
+			dev_warn(&akm->i2c->dev, "Status error(0x%x). Reset\n",
+				tmp);
+			AKECS_Reset(akm, 0);
+			goto exit;
+		}
+
+
+
+		tmp = (int)((int16_t)(dat_buf[2]<<8)+((int16_t)dat_buf[1]));
+		tmp = tmp * akm->sense_conf[0] / 256 + tmp / 2;
+		mag_x = tmp;
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		tmp = (int)((int16_t)(dat_buf[4]<<8)+((int16_t)dat_buf[3]));
 		tmp = tmp * akm->sense_conf[1] / 256 + tmp / 2;
 		mag_y = tmp;
@@ -1829,6 +1895,7 @@ static int mag_poll_thread(void *data)
 		tmp = (int)((int16_t)(dat_buf[6]<<8)+((int16_t)dat_buf[5]));
 		tmp = tmp * akm->sense_conf[2] / 256 + tmp / 2;
 		mag_z = tmp;
+<<<<<<< HEAD
 
 		switch (akm->pdata->layout) {
 		case 0:
@@ -1871,16 +1938,70 @@ static int mag_poll_thread(void *data)
 			break;
 		}
 
+=======
+
+		switch (akm->pdata->layout) {
+		case 0:
+		case 1:
+			/* Fall into the default direction */
+			break;
+		case 2:
+			tmp = mag_x;
+			mag_x = mag_y;
+			mag_y = -tmp;
+			break;
+		case 3:
+			mag_x = -mag_x;
+			mag_y = -mag_y;
+			break;
+		case 4:
+			tmp = mag_x;
+			mag_x = -mag_y;
+			mag_y = tmp;
+			break;
+		case 5:
+			mag_x = -mag_x;
+			mag_z = -mag_z;
+			break;
+		case 6:
+			tmp = mag_x;
+			mag_x = mag_y;
+			mag_y = tmp;
+			mag_z = -mag_z;
+			break;
+		case 7:
+			mag_y = -mag_y;
+			mag_z = -mag_z;
+			break;
+		case 8:
+			tmp = mag_x;
+			mag_x = -mag_y;
+			mag_y = -tmp;
+			mag_z = -mag_z;
+			break;
+		}
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		input_report_abs(akm->input, ABS_X, mag_x);
 		input_report_abs(akm->input, ABS_Y, mag_y);
 		input_report_abs(akm->input, ABS_Z, mag_z);
 		input_event(akm->input,
+<<<<<<< HEAD
 				EV_SYN, SYN_TIME_SEC,
 				ktime_to_timespec(timestamp).tv_sec);
 		input_event(akm->input,
 				EV_SYN, SYN_TIME_NSEC,
 				ktime_to_timespec(timestamp).tv_nsec);
 		input_sync(akm->input);
+=======
+			EV_SYN, SYN_TIME_SEC,
+			ktime_to_timespec(timestamp).tv_sec);
+		input_event(akm->input,
+			EV_SYN, SYN_TIME_NSEC,
+			ktime_to_timespec(timestamp).tv_nsec);
+		input_sync(akm->input);
+
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 		dev_vdbg(&s_akm->i2c->dev,
 			"input report: mag_x=%02x, mag_y=%02x, mag_z=%02x",
 			mag_x, mag_y, mag_z);
@@ -1888,7 +2009,11 @@ static int mag_poll_thread(void *data)
 exit:
 		if (akm->use_sng_measure) {
 			ret = AKECS_SetMode(akm,
+<<<<<<< HEAD
 				AKM_MODE_SNG_MEASURE | AKM8963_BIT_OP_16);
+=======
+			AKM_MODE_SNG_MEASURE | AKM8963_BIT_OP_16);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 			if (ret < 0)
 				dev_warn(&akm->i2c->dev,
 					"Failed to set mode\n");
@@ -2016,7 +2141,7 @@ int akm8963_compass_probe(
 		err = pinctrl_select_state(s_akm->pinctrl, s_akm->pin_default);
 		if (err) {
 			dev_err(&i2c->dev, "Can't select pinctrl state\n");
-			goto err_compass_pwr_off;
+			goto err_unregister_device;
 		}
 	}
 
@@ -2069,10 +2194,17 @@ int akm8963_compass_probe(
 		s_akm->mag_wkp_flag = 0;
 
 		hrtimer_init(&s_akm->mag_timer, CLOCK_BOOTTIME,
+<<<<<<< HEAD
 				HRTIMER_MODE_REL);
 		s_akm->mag_timer.function = mag_timer_handle;
 		s_akm->mag_task = kthread_run(mag_poll_thread,
 						s_akm, "mag_sns");
+=======
+					HRTIMER_MODE_REL);
+		s_akm->mag_timer.function = mag_timer_handle;
+		s_akm->mag_task = kthread_run(mag_poll_thread,
+					s_akm, "mag_sns");
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	}
 
 	/***** sysfs *****/
@@ -2080,7 +2212,7 @@ int akm8963_compass_probe(
 	if (0 > err) {
 		dev_err(&i2c->dev,
 				"%s: create sysfs failed.", __func__);
-		goto err_free_irq;
+		goto err_destroy_timer;
 	}
 
 	input_set_events_per_packet(s_akm->input, 60);
@@ -2107,17 +2239,24 @@ int akm8963_compass_probe(
 
 remove_sysfs:
 	remove_sysfs_interfaces(s_akm);
-err_free_irq:
+err_destroy_timer:
+	hrtimer_cancel(&s_akm->mag_timer);
+	kthread_stop(s_akm->mag_task);
 	if (s_akm->i2c->irq)
 		free_irq(s_akm->i2c->irq, s_akm);
+<<<<<<< HEAD
 	hrtimer_cancel(&s_akm->mag_timer);
 	kthread_stop(s_akm->mag_task);
 err_unregister_device:
 	input_unregister_device(s_akm->input);
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 err_gpio_free:
 	if ((s_akm->pdata->use_int) &&
 		(gpio_is_valid(s_akm->pdata->gpio_int)))
 		gpio_free(s_akm->pdata->gpio_int);
+err_unregister_device:
+	input_unregister_device(s_akm->input);
 err_compass_pwr_off:
 	akm_compass_power_set(s_akm, false);
 err_compass_pwr_init:
@@ -2141,6 +2280,9 @@ static int akm8963_compass_remove(struct i2c_client *i2c)
 	kthread_stop(akm->mag_task);
 	if (akm->i2c->irq)
 		free_irq(akm->i2c->irq, akm);
+	if ((s_akm->pdata->use_int) &&
+		(gpio_is_valid(s_akm->pdata->gpio_int)))
+		gpio_free(s_akm->pdata->gpio_int);
 	input_unregister_device(akm->input);
 	devm_kfree(&i2c->dev, akm);
 	dev_info(&i2c->dev, "successfully removed.");

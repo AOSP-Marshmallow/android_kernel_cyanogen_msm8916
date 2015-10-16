@@ -178,6 +178,15 @@ enum dsi_pm_type {
 		DSI_INTR_CMD_MDP_DONE_MASK | \
 		DSI_INTR_CMD_DMA_DONE_MASK)
 
+#define DSI_INTR_MASK_ALL	\
+		(DSI_INTR_DESJEW_MASK | \
+		DSI_INTR_DYNAMIC_REFRESH_MASK | \
+		DSI_INTR_ERROR_MASK | \
+		DSI_INTR_BTA_DONE_MASK | \
+		DSI_INTR_VIDEO_DONE_MASK | \
+		DSI_INTR_CMD_MDP_DONE_MASK | \
+		DSI_INTR_CMD_DMA_DONE_MASK)
+
 #define DSI_CMD_TRIGGER_NONE		0x0	/* mdp trigger */
 #define DSI_CMD_TRIGGER_TE		0x02
 #define DSI_CMD_TRIGGER_SW		0x04
@@ -378,6 +387,7 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_drv_cm_data shared_pdata;
 	u32 pclk_rate;
 	u32 byte_clk_rate;
+	bool refresh_clk_rate; /* flag to recalculate clk_rate */
 	struct dss_module_power power_data[DSI_MAX_PM];
 	u32 dsi_irq_mask;
 	struct mdss_hw *dsi_hw;
@@ -419,7 +429,10 @@ struct mdss_dsi_ctrl_pdata {
 	int mdp_busy;
 	struct mutex mutex;
 	struct mutex cmd_mutex;
+<<<<<<< HEAD
 	struct mutex cmdlist_mutex;
+=======
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 	struct mutex clk_lane_mutex;
 
 	u32 ulps_clamp_ctrl_off;
@@ -434,6 +447,7 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_buf rx_buf;
 	struct dsi_buf status_buf;
 	int status_mode;
+	int rx_len;
 
 	struct dsi_pinctrl_res pin_res;
 
@@ -505,7 +519,7 @@ void mdss_dsi_phy_sw_reset(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_phy_init(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_ctrl_init(struct device *ctrl_dev,
 			struct mdss_dsi_ctrl_pdata *ctrl);
-void mdss_dsi_cmd_mdp_busy(struct mdss_dsi_ctrl_pdata *ctrl);
+int mdss_dsi_cmd_mdp_busy(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_wait4video_done(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_en_wait4dynamic_done(struct mdss_dsi_ctrl_pdata *ctrl);
 int mdss_dsi_cmdlist_commit(struct mdss_dsi_ctrl_pdata *ctrl, int from_mdp);
@@ -516,6 +530,11 @@ bool __mdss_dsi_clk_enabled(struct mdss_dsi_ctrl_pdata *ctrl, u8 clk_type);
 void mdss_dsi_ctrl_setup(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_dln0_phy_err(struct mdss_dsi_ctrl_pdata *ctrl);
 void mdss_dsi_lp_cd_rx(struct mdss_dsi_ctrl_pdata *ctrl);
+<<<<<<< HEAD
+=======
+u32 mdss_dsi_panel_cmd_read(struct mdss_dsi_ctrl_pdata *ctrl, char cmd0,
+		char cmd1, void (*fxn)(int), char *rbuf, int len);
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 void mdss_dsi_get_hw_revision(struct mdss_dsi_ctrl_pdata *ctrl);
 
 int mdss_dsi_panel_init(struct device_node *node,

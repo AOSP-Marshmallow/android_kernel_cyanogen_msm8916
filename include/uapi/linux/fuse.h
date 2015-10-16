@@ -96,6 +96,11 @@
  *
  * 7.23
  *  - add FUSE_WRITEBACK_CACHE
+<<<<<<< HEAD
+=======
+ *  - add time_gran to fuse_init_out
+ *  - add reserved space to fuse_init_out
+>>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
  */
 
 #ifndef _LINUX_FUSE_H
@@ -559,6 +564,9 @@ struct fuse_init_in {
 	uint32_t	flags;
 };
 
+#define FUSE_COMPAT_INIT_OUT_SIZE 8
+#define FUSE_COMPAT_22_INIT_OUT_SIZE 24
+
 struct fuse_init_out {
 	uint32_t	major;
 	uint32_t	minor;
@@ -567,6 +575,8 @@ struct fuse_init_out {
 	uint16_t	max_background;
 	uint16_t	congestion_threshold;
 	uint32_t	max_write;
+	uint32_t	time_gran;
+	uint32_t	unused[9];
 };
 
 #define CUSE_INIT_INFO_MAX 4096
