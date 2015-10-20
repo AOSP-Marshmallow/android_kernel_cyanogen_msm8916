@@ -1577,20 +1577,14 @@ static struct platform_driver mc_plat_driver = {
 	},
 };
 
-<<<<<<< HEAD
-static int __init mobicore_register(void)
-=======
 static int mobicore_register(void)
->>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 {
 	return platform_driver_register(&mc_plat_driver);
 }
 
-<<<<<<< HEAD
 static void __exit mobicore_unregister(void)
-=======
+
 static void mobicore_unregister(void)
->>>>>>> yu/caf/LA.BR.1.2.6-00110-8x16.0
 {
 	platform_driver_unregister(&mc_plat_driver);
 	mobicore_exit();
